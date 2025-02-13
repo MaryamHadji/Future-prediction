@@ -1,3 +1,29 @@
+#R script of cross-validated regression (ridge linear regression) for Predicting Future MRI-based Brain Atrophy Based on Longitudinal Data 
+#Author: Maryam Hadji, University of Easatern Finland, Kuopio ,Finland (maryamh@uef.fi)
+#last updated 13.Feb.2025
+#
+#Requirements:
+#R version 4.3.1 or later
+#install.packages("glmnet")
+#install.packages("caret", dependencies = c("Depends", "Suggests"))
+#install.packages("Metrics")
+
+#
+# Usage: 
+# Set working directory to directory containing R script
+# source('ENLR.R')
+
+#Parameters: 
+#Xdata: input matrix, of dimension nobs x nvars; each row is an observation vector
+#label: response variable 
+#seed: seed number for reproducing the results
+
+#Returned values:
+#A list of 2 items (pred and coeffs)
+#pred: predicted label
+#coeffs: a matrix of coefficient values derived from K fold experiments
+
+###############
 ENLR <- function(Xdata, label, alpha, seed) {
   library(glmnet)
   library(caret)
