@@ -1,17 +1,30 @@
-# Function to generate and save a plot for hippocampus atrophy model
+# R script for generating a scatter plot comparing predicted and true atrophy rates
+# Author: Maryam Hadji, University of Eastern Finland, Kuopio, Finland (maryamh@uef.fi)
+# Last updated: 20-Feb-2025
 #
-# This function loads an RData file, extracts relevant data, creates a plot comparing
-# predicted and true atrophy rates, and saves the plot as a PNG file.
+# Description:
+# This script loads an RData file, extracts relevant data, and creates a scatter plot 
+# comparing predicted and true atrophy rates for the hippocampus atrophy model.
+# The plot is saved as a PNG file, with points colored by diagnosis labels ("CN", "MCI", "Dementia").
+#
+# Requirements:
+# - R version 4.3.1 or later
+# - Required Libraries: ggplot2, extrafont (optional for custom fonts)
+#
+# Usage:
+# - Set the working directory to the directory containing this R script
+# - Run using: source('Generate_Hippocampus_ScatterPlot.R')
 #
 # Parameters:
-# - rdata_path: Path to the RData file containing Pearson correlation results.
-# - output_path: Path to save the generated plot.
-# - yhat_pred: Matrix of predicted atrophy rates.
-# - Y: True atrophy rates.
-# - DX: Diagnosis labels ("CN", "MCI", "Dementia").
+# - rdata_path: Path to the RData file containing Pearson correlation results
+# - output_path: Path to save the generated scatter plot as a PNG file
+# - yhat_pred: Matrix of predicted atrophy rates
+# - Y: True atrophy rates
+# - DX: Diagnosis labels ("CN", "MCI", "Dementia")
 #
-# Example usage:
-# plot_hippocampus_model("/path/to/data.Rdata", "/path/to/output.png", yhat_pred, Y, DX)
+# Returned values:
+# - A scatter plot comparing predicted and true atrophy rates, colored by diagnosis labels
+
 
 Scatterplot <- function(rdata_path, output_path, yhat_pred, Y, DX) {
   
