@@ -1,24 +1,46 @@
-# This function generates a bar chart comparing correlation values for different models.
+# R script for generating a bar chart comparing correlation values for different models 
+# Author: Maryam Hadji, University of Eastern Finland, Kuopio, Finland (maryamh@uef.fi)
+# Last updated: 17-Feb-2025
 #
-# It loads correlation results from multiple RData files, calculates means and confidence intervals,
-# and visualizes them as a grouped bar chart with error bars.
+# Description:
+# This script generates a grouped bar chart with error bars to compare correlation values
+# across different models using data from RData files. It calculates mean correlation values
+# along with confidence intervals and visualizes them using ggplot2.
 #
-# Libraries required:
-# - ggplot2 (for visualization)
-# - extrafont (for font handling)
+# Requirements:
+# - R version 4.3.1 or later
+# - Required Libraries: ggplot2, extrafont
 #
-# Example usage:
-# generate_hippocampus_plot(
-#   file_paths = list("/path/to/BL_MRI_hippo_ENLR.Rdata", "/path/to/bl&long_MRI_hippo_ENLR.Rdata", 
-#                     "/path/to/BL_Comb_hippo_ENLR.Rdata", "/path/to/bl&long_Comb_hippo_ENLR.Rdata"),
-#   output_path = "/path/to/save/Hippocampus.png"
-# )
+# Usage:
+# - Set the working directory to the directory containing this R script
+# - Run using: source('Generate_Hippocampus_Plot.R')
+#
+# Parameters:
+# - file_paths: A list of file paths to RData files containing correlation results
+# - output_path: The file path to save the resulting plot as a PNG
+#
+# Returned values:
+# - A grouped bar chart with error bars comparing correlation values across models
 
 library(ggplot2)
 library(extrafont)
 
-font_import() 
-fonts()       
+# Check if Times New Roman font is already available, otherwise import it once
+
+if (!"Times New Roman" %in% fonts()) {
+  font_import()
+}
+
+fonts()
+
+# Validate file paths
+validate_paths <- function(paths) {
+  for (path in paths) {
+    if (!file.exists(path)) {
+      stop(paste("File does not exist:", path))
+    }
+  }
+}
 
 generate_hippocampus_plot <- function(file_paths, output_path) {
   ########################
@@ -33,10 +55,13 @@ generate_hippocampus_plot <- function(file_paths, output_path) {
   Pearson_values <- c()
   CI_values <- list()
   
+  # Validate paths before loading data
+  validate_paths(file_paths)
+  
   for (i in seq_along(file_paths)) {
-    load(file_paths[[i]])
-    Pearson_values <- c(Pearson_values, mean(Pearson_R))
-    CI_values[[i]] <- CI[,2]
+    load(file_paths[[i]])  # Load each RData file
+    Pearson_values <- c(Pearson_values, mean(Pearson_R))  # Assuming Pearson_R is defined in the RData
+    CI_values[[i]] <- CI[,2]  # Assuming CI is a matrix or data frame with lower/upper CI in column 2
   }
   
   R <- Pearson_values
@@ -49,20 +74,22 @@ generate_hippocampus_plot <- function(file_paths, output_path) {
   df$Group <- factor(df$Group, levels = c("MRI Only", "MRI + Risk Factors"))
   df$Model <- factor(df$Model, levels = c("Baseline", "Longitudinal"))
   
+  # Prepare p-values for the plot
   p_values_df <- data.frame(
-    Group = c("MRI Only", "MRI + Risk Factors"),  
-    p_value = c(0.02, 0.03),                      
-    y_position = c(0.65, 0.68)                   
+    Group = c("MRI Only", "MRI + Risk Factors"),
+    p_value = c(0.02, 0.03),
+    y_position = c(0.65, 0.68)
   )
   
-    Barplot <- ggplot(df, aes(fill = Model, y = R, x = Group)) +  
-    geom_bar(position = "dodge", stat = "identity", width = 0.5) +  
-    geom_errorbar(aes(ymin = X2.5., ymax = X97.5.), width = 0.2, size = 0.5, position = position_dodge(0.5)) +  
-    scale_x_discrete(name = " ") +  
-    scale_y_continuous(name = "Correlation", breaks = c(0, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70), limits = c(0, 0.75)) +  
-    scale_fill_manual(values = cbPalette) +  
-    labs(title = "Hippocampus") +  
-    geom_text(data = p_values_df, aes(x = Group, y = y_position, label = paste0("P-value = ", p_value)), 
+  # Create the bar plot
+  Barplot <- ggplot(df, aes(fill = Model, y = R, x = Group)) +
+    geom_bar(position = "dodge", stat = "identity", width = 0.5) +
+    geom_errorbar(aes(ymin = X2.5., ymax = X97.5.), width = 0.2, size = 0.5, position = position_dodge(0.5)) +
+    scale_x_discrete(name = " ") +
+    scale_y_continuous(name = "Correlation", breaks = c(0, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70), limits = c(0, 0.75)) +
+    scale_fill_manual(values = cbPalette) +
+    labs(title = "Hippocampus") +
+    geom_text(data = p_values_df, aes(x = Group, y = y_position, label = paste0("P-value = ", p_value)),
               inherit.aes = FALSE, vjust = -0.5, size = 5, fontface = "bold", family = "Times New Roman") +
     theme(
       axis.line.x = element_line(size = 0.5, colour = "white"),
@@ -82,3 +109,4 @@ generate_hippocampus_plot <- function(file_paths, output_path) {
   print(Barplot)
   dev.off()
 }
+
