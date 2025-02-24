@@ -41,14 +41,13 @@ library(randomForest)
 library(dplyr)
 library(glmnet)
 
-# Load Required Function
-source("/Users/maryamh/Desktop/Athrophy_Project/Paper/Functions/ENLR.R")
+source("Functions/ENLR.R")
 
 # Load Data
 load("TotalData_bl_24_48.Rdata")
 
 # Function to Calculate Annualized Percentage Change
-Change <- function(MRI_24, MRI_48) {
+Annualized_percentage_change <- function(MRI_24, MRI_48) {
   hippo_24 <- rowMeans(MRI_24[, c("Right Hippocampus", "Left Hippocampus")], na.rm = TRUE)
   hippo_48 <- rowMeans(MRI_48[, c("Right Hippocampus", "Left Hippocampus")], na.rm = TRUE)
   Annualized_percentage_change <- ((hippo_24 - hippo_48) / hippo_24) * 100 / 2
@@ -74,7 +73,7 @@ run_model <- function(model_type, Y, seed = 123) {
     stop("Invalid model type. Choose 1, 2, 3, or 4.")
   }
   
-  # No exclusion of values based on Y
+  
   RID = rownames(Xdata)
   
   # Normalization
@@ -100,11 +99,10 @@ run_model <- function(model_type, Y, seed = 123) {
   source("Functions/conf_int_2.R")
   CI = conf_int(yhat_pred, Y, nboot = 1000, alpha = 0.05)
   
-  # Save results
   save(Pearson_R, Spearman_R, allmae, yhat_pred, Y, coef_all, CI, DX_bl, DX,
        file = paste0("Results/Model_", model_type, "_hippo_ENLR.Rdata"))
+  
   
   list(Pearson_R = mean(Pearson_R), Spearman_R = mean(Spearman_R),
        allmae = mean(allmae), CI = CI, coef_all = coef_all)
 }
-
