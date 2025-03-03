@@ -1,4 +1,4 @@
-# Elastic Net Model for Predicting Hippocampal Atrophy
+# Elastic Net Model for Predicting Brain Atrophy
 # Author: Maryam Hadji, University of Eastern Finland, Kuopio, Finland (maryamh@uef.fi)
 # Last updated: 20.Feb.2025
 
@@ -31,6 +31,7 @@
 # 3-Longitudinal_ MRI only 
 # 4-Longitudinal_ MRI+Riskfactors  
 
+
 # Load Required Libraries
 library(Matrix)
 library(ggplot2)
@@ -41,25 +42,39 @@ library(randomForest)
 library(dplyr)
 library(glmnet)
 
+# Load Custom Functions
 source("Functions/ENLR.R")
+source("Functions/conf_int_2.R")
 
 # Load Data
 load("TotalData_bl_24_48.Rdata")
 
 # Function to Calculate Annualized Percentage Change
-Annualized_percentage_change <- function(MRI_24, MRI_48) {
-  hippo_24 <- rowMeans(MRI_24[, c("Right Hippocampus", "Left Hippocampus")], na.rm = TRUE)
-  hippo_48 <- rowMeans(MRI_48[, c("Right Hippocampus", "Left Hippocampus")], na.rm = TRUE)
-  Annualized_percentage_change <- ((hippo_24 - hippo_48) / hippo_24) * 100 / 2
-  return(Annualized_percentage_change)
+Annualized_percentage_change <- function(MRI_24, MRI_48, region = "hippocampus") {
+  if (region == "hippocampus") {
+    region_24 <- rowMeans(MRI_24[, c("Right Hippocampus", "Left Hippocampus")], na.rm = TRUE)
+    region_48 <- rowMeans(MRI_48[, c("Right Hippocampus", "Left Hippocampus")], na.rm = TRUE)
+  } else if (region == "ventricles") {
+    region_24 <- rowMeans(roitot_24[, c("Right Inf Lat Vent", "Left Inf Lat Vent", 
+                                        "Right Lateral Ventricle", "Left Lateral Ventricle")], na.rm = TRUE)
+    region_48 <- rowMeans(roitot_48[, c("Right Inf Lat Vent", "Left Inf Lat Vent", 
+                                        "Right Lateral Ventricle", "Left Lateral Ventricle")], na.rm = TRUE)
+  } else if (region == "TGM") {
+    region_24 <- totalgray_24
+    region_48 <- totalgray_48
+  } else {
+    stop("Invalid region specified. Choose 'hippocampus', 'ventricles', or 'TGM'.")
+  }
+  
+  return(((region_24 - region_48) / region_24) * 100 / 2)
 }
 
-# Calculate Hippocampal Atrophy for Training Data
-Y <- Annualized_percentage_change
-
 # Function to Prepare Data and Run Elastic Net Model
-run_model <- function(model_type, Y, seed = 123) {
+run_model <- function(model_type, region = "hippocampus", seed = 123) {
   set.seed(seed)
+  
+  # Calculate Atrophy Rate for Selected Region
+  Y <- Annualized_percentage_change(MRI_24, MRI_48, region)
   
   if (model_type == 1) {
     Xdata <- cbind(MRI_24, Feild_strengt)
@@ -73,36 +88,33 @@ run_model <- function(model_type, Y, seed = 123) {
     stop("Invalid model type. Choose 1, 2, 3, or 4.")
   }
   
-  
-  RID = rownames(Xdata)
+  RID <- rownames(Xdata)
   
   # Normalization
   normParam <- preProcess(Xdata, method = c("center", "scale"))
   Xdata <- predict(normParam, Xdata)
   
-  Pearson_R = vector()
-  Spearman_R = vector()
-  allmae = vector()
-  yhat_pred = matrix(0, nrow = length(RID), ncol = 10)
-  coef_all = list()
+  Pearson_R <- vector()
+  Spearman_R <- vector()
+  allmae <- vector()
+  yhat_pred <- matrix(0, nrow = length(RID), ncol = 10)
+  coef_all <- list()
   
   for (ll in 1:10) {
-    res = Regression_EL(Xdata, Y, 0.5, ll)
-    coef_all[[ll]] = res$coefs
-    yhat_pred[, ll] = res$yhat
-    Pearson_R = c(Pearson_R, res$pearson_cor)
-    Spearman_R = c(Spearman_R, res$spearman_cor)
-    allmae = c(allmae, res$MAE)
+    res <- ENLR(Xdata, Y, 0.5, ll)
+    coef_all[[ll]] <- res$coefs
+    yhat_pred[, ll] <- res$yhat
+    Pearson_R <- c(Pearson_R, res$pearson_cor)
+    Spearman_R <- c(Spearman_R, res$spearman_cor)
+    allmae <- c(allmae, res$MAE)
   }
   
   # Confidence Interval calculation
-  source("Functions/conf_int_2.R")
-  CI = conf_int(yhat_pred, Y, nboot = 1000, alpha = 0.05)
+  CI <- conf_int(yhat_pred, Y, nboot = 1000, alpha = 0.05)
   
   save(Pearson_R, Spearman_R, allmae, yhat_pred, Y, coef_all, CI, DX_bl, DX,
-       file = paste0("Results/Model_", model_type, "_hippo_ENLR.Rdata"))
+       file = paste0("Results/Model_", model_type, "_", region, "_ENLR.Rdata"))
   
-  
-  list(Pearson_R = mean(Pearson_R), Spearman_R = mean(Spearman_R),
-       allmae = mean(allmae), CI = CI, coef_all = coef_all)
+  return(list(Pearson_R = mean(Pearson_R), Spearman_R = mean(Spearman_R),
+              allmae = mean(allmae), CI = CI, coef_all = coef_all))
 }
