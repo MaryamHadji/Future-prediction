@@ -55,9 +55,9 @@ Annualized_percentage_change <- function(MRI_24, MRI_48, region = "hippocampus")
     region_24 <- rowMeans(MRI_24[, c("Right Hippocampus", "Left Hippocampus")], na.rm = TRUE)
     region_48 <- rowMeans(MRI_48[, c("Right Hippocampus", "Left Hippocampus")], na.rm = TRUE)
   } else if (region == "ventricles") {
-    region_24 <- rowMeans(roitot_24[, c("Right Inf Lat Vent", "Left Inf Lat Vent", 
+    region_24 <- rowMeans(MRI_24[, c("Right Inf Lat Vent", "Left Inf Lat Vent", 
                                         "Right Lateral Ventricle", "Left Lateral Ventricle")], na.rm = TRUE)
-    region_48 <- rowMeans(roitot_48[, c("Right Inf Lat Vent", "Left Inf Lat Vent", 
+    region_48 <- rowMeans(MRI_48[, c("Right Inf Lat Vent", "Left Inf Lat Vent", 
                                         "Right Lateral Ventricle", "Left Lateral Ventricle")], na.rm = TRUE)
   } else if (region == "TGM") {
     region_24 <- totalgray_24
